@@ -4,6 +4,12 @@ Control your Tesla Model 3/S/X from the command line.
 
 ## Usage
 
+Use **tesla login** to log in to your Tesla Account.
+
+Use **tesla help** to get list of available commands.
+
+### Show temperature information
+
 ```
 $ tesla temp
 Current
