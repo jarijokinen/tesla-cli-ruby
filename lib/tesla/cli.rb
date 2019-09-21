@@ -23,7 +23,7 @@ module Tesla
       v = Vehicle.new
       pp v.info
     end
-    
+
     desc 'temp', 'Show temperature information'
     def temp
       v = Vehicle.new
@@ -35,6 +35,26 @@ module Tesla
           Driver:    #{v.driver_temp_setting}
           Passenger: #{v.passenger_temp_setting}
       EOF
+    end
+    
+    desc 'acon', 'Turns on the climate control (HVAC) system'
+    def acon
+      v = Vehicle.new
+      if v.command('auto_conditioning_start')
+        puts 'Climate control is ON'
+      else
+        puts 'Error'
+      end
+    end
+    
+    desc 'acoff', 'Turns off the climate control (HVAC) system'
+    def acoff
+      v = Vehicle.new
+      if v.command('auto_conditioning_stop')
+        puts 'Climate control is OFF'
+      else
+        puts 'Error'
+      end
     end
   end
 end

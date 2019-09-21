@@ -4,12 +4,12 @@ require 'tesla/auth'
 module Tesla
   class Vehicle
     def initialize(id = nil)
-      @api_url = 'https://owner-api.teslamotors.com/api/1'
+      @baseurl = 'https://owner-api.teslamotors.com/api/1/vehicles'
       @info = Hash.new
 
       auth = Auth.new
       unless auth.logged_in?
-        puts "Please log in first"
+        puts 'Please log in first'
         exit -1
       end
 
@@ -19,11 +19,11 @@ module Tesla
       }
 
       if id
-        @id = id
+        @id = id.to_s
       elsif auth.default_vehicle
-        @id = auth.default_vehicle
+        @id = auth.default_vehicle.to_s
       else
-        @id = first['id']
+        @id = first['id'].to_s
         teslarc = JSON.parse(File.read(File.join(ENV['HOME'], '.teslarc')))
         teslarc['default_vehicle'] = @id
         File.write(File.join(ENV['HOME'], '.teslarc'), teslarc.to_json)
@@ -33,27 +33,40 @@ module Tesla
     end
 
     def fetch
-      endpoint = "#{@api_url}/vehicles/#{@id}/vehicle_data"
-      result = JSON.parse(HTTParty.get(endpoint, headers: @headers).body)
+      url = File.join(@baseurl, @id, 'vehicle_data')
+      res = HTTParty.get(url, headers: @headers)
       
-      if result['error'] && result['error'].include?('vehicle unavailable')
+      if res.include?('error') && res['error'].include?('vehicle unavailable')
         puts 'Vehicle unavailable, trying to wake up...'
         wake_up!
         exit -1
       end
 
-      @info = result['response']
+      @info = res['response']
+    end
+    
+    def command_success?(res)
+      if res.code == 200 && res['response']['result'].to_s == 'true'
+        return true
+      else
+        puts "Error: #{res.code}"
+        exit -1
+      end
     end
 
     def wake_up!
-      endpoint = "#{@api_url}/vehicles/#{@id}/wake_up"
-      result = JSON.parse(HTTParty.post(endpoint, headers: @headers).body)
+      url = File.join(@baseurl, @id, 'wake_up')
+      HTTParty.post(url, headers: @headers)
+    end
+
+    def command(cmd)
+      url = File.join(@baseurl, @id, 'command', cmd)
+      res = HTTParty.post(url, headers: @headers)
+      return command_success?(res)
     end
 
     def first
-      endpoint = "#{@api_url}/vehicles"
-      result = HTTParty.get(endpoint, headers: @headers)
-      JSON.parse(result.body)['response'][0]
+      HTTParty.get(@baseurl, headers: @headers)['response'].first
     end
 
     def info
